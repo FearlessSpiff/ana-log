@@ -1,0 +1,11 @@
+services:
+  ana-log:
+    build: .
+    container_name: ana-log
+    restart: unless-stopped
+    env_file: .env
+    # Only reachable through nginx on the host.
+    ports:
+      - "127.0.0.1:8090:8090"
+    volumes:
+      - ./pb_data:/pb/pb_data

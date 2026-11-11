@@ -1,0 +1,7 @@
+.git
+.env
+pb_data
+pb/pb_data
+web/node_modules
+web/dist
+.dev
