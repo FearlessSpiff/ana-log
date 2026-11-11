@@ -6,6 +6,6 @@ services:
     env_file: .env
     # Only reachable through nginx on the host.
     ports:
-      - "127.0.0.1:8090:8090"
+      - "127.0.0.1:${ANA_LOG_PORT:-8090}:8090"
     volumes:
       - ./pb_data:/pb/pb_data
