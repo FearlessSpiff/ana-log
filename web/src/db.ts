@@ -21,6 +21,7 @@ export interface Camera extends Base {
   slowest_shutter?: string
   fastest_shutter?: string
   bulb?: boolean
+  flash_sync?: string
   notes?: string
 }
 

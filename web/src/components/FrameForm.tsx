@@ -34,6 +34,15 @@ export function FrameForm({ frame: initial, lenses, flashes, camera, iso, isNew,
   const lens = lenses.find((l) => l.id === frame.lens)
   const flash = flashes.find((f) => f.id === frame.flash)
 
+  // Turning a flash on sets the shutter to the camera's sync speed.
+  const setFlash = (id: string) =>
+    setFrame((f) => ({
+      ...f,
+      flash: id,
+      flash_power: id ? f.flash_power : '',
+      shutter: id && !f.flash && camera?.flash_sync?.trim() ? camera.flash_sync.trim() : f.shutter,
+    }))
+
   const set = <K extends keyof Frame>(key: K, value: Frame[K]) => setFrame((f) => ({ ...f, [key]: value }))
 
   const locate = () => {
@@ -101,7 +110,7 @@ export function FrameForm({ frame: initial, lenses, flashes, camera, iso, isNew,
           <input
             type="checkbox"
             checked={frame.flash === flashes[0].id}
-            onChange={(e) => setFrame((f) => ({ ...f, flash: e.target.checked ? flashes[0].id : '', flash_power: e.target.checked ? f.flash_power : '' }))}
+            onChange={(e) => setFlash(e.target.checked ? flashes[0].id : '')}
           />
           Flash ({flashes[0].name})
         </label>
@@ -111,7 +120,7 @@ export function FrameForm({ frame: initial, lenses, flashes, camera, iso, isNew,
             Flash
             <select
               value={frame.flash ?? ''}
-              onChange={(e) => setFrame((f) => ({ ...f, flash: e.target.value, flash_power: e.target.value ? f.flash_power : '' }))}
+              onChange={(e) => setFlash(e.target.value)}
             >
               <option value="">No flash</option>
               {flashes.map((f) => (

@@ -33,6 +33,7 @@ const CAMERA_FIELDS: Field[] = [
   { key: 'slowest_shutter', label: 'Slowest shutter speed', suggestions: SPEEDS, placeholder: '1s' },
   { key: 'fastest_shutter', label: 'Fastest shutter speed', suggestions: SPEEDS, placeholder: '1/1000' },
   { key: 'bulb', label: 'Has bulb (B)', type: 'checkbox' },
+  { key: 'flash_sync', label: 'Flash sync speed', suggestions: SPEEDS, placeholder: '1/125' },
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ]
 
@@ -90,7 +91,7 @@ export function Gear() {
       </div>
       {tab === 'cameras' && (
         <GearList<Camera> table="cameras" noun="camera" rows={cameras} fields={CAMERA_FIELDS} suggest={suggest} thumb={(c) => <CameraIcon type={c.type} />} describe={(c) =>
-            [c.format, c.mount, describeRange(c.slowest_shutter, c.fastest_shutter), c.bulb && 'B'].filter(Boolean).join(' · ')
+            [c.format, c.mount, describeRange(c.slowest_shutter, c.fastest_shutter), c.bulb && 'B', c.flash_sync && `⚡ ${c.flash_sync}`].filter(Boolean).join(' · ')
           }
         />
       )}
