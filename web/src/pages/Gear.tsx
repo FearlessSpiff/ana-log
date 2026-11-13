@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { CameraIcon, FilmIcon, LensIcon } from '../components/Icons'
-import { remove, save, type Base, type Camera, type Film, type Lens, type TableName } from '../db'
-import { useCameras, useFilms, useLenses } from '../hooks'
+import { CameraIcon, FilmIcon, FlashIcon, LensIcon } from '../components/Icons'
+import { remove, save, type Base, type Camera, type Film, type Flash, type Lens, type TableName } from '../db'
+import { useCameras, useFilms, useFlashes, useLenses } from '../hooks'
 import {
   APERTURES,
   CAMERA_TYPES,
@@ -45,6 +45,12 @@ const LENS_FIELDS: Field[] = [
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ]
 
+const FLASH_FIELDS: Field[] = [
+  { key: 'name', label: 'Name', placeholder: 'e.g. Minolta 2800AF' },
+  { key: 'guide_number', label: 'Guide number (ISO 100, m)', type: 'number' },
+  { key: 'notes', label: 'Notes', type: 'textarea' },
+]
+
 const FILM_FIELDS: Field[] = [
   { key: 'name', label: 'Name', placeholder: 'e.g. Kodak Portra 400' },
   { key: 'iso', label: 'ISO', type: 'number' },
@@ -57,6 +63,7 @@ const FILM_FIELDS: Field[] = [
 const TABS = [
   { key: 'cameras', label: 'Cameras' },
   { key: 'lenses', label: 'Lenses' },
+  { key: 'flashes', label: 'Flashes' },
   { key: 'films', label: 'Films' },
 ] as const
 
@@ -64,6 +71,7 @@ export function Gear() {
   const [tab, setTab] = useState<(typeof TABS)[number]['key']>('cameras')
   const cameras = useCameras()
   const lenses = useLenses()
+  const flashes = useFlashes()
   const films = useFilms()
   // Offer mounts already typed in, so cameras and lenses end up spelled alike.
   const suggest = {
@@ -95,6 +103,16 @@ export function Gear() {
           suggest={suggest}
           thumb={() => <LensIcon />}
           describe={(l) => [l.focal_length, describeRange(l.max_aperture, l.min_aperture, 'f/'), l.mount].filter(Boolean).join(' · ')}
+        />
+      )}
+      {tab === 'flashes' && (
+        <GearList<Flash>
+          table="flashes"
+          noun="flash"
+          rows={flashes}
+          fields={FLASH_FIELDS}
+          thumb={() => <FlashIcon />}
+          describe={(f) => (f.guide_number ? `GN ${f.guide_number}` : undefined)}
         />
       )}
       {tab === 'films' && (
@@ -145,7 +163,7 @@ function GearList<T extends Base & { name: string }>({ table, noun, rows, fields
           Add {noun}
         </button>
       )}
-      {!rows.length && !editing && <p className="empty">No {noun === 'lens' ? 'lenses' : `${noun}s`} yet.</p>}
+      {!rows.length && !editing && <p className="empty">No {noun === 'lens' ? 'lenses' : noun === 'flash' ? 'flashes' : `${noun}s`} yet.</p>}
       <ul className="list">
         {rows.map((r) => (
           <li key={r.id}>

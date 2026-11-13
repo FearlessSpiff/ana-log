@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { FrameForm } from '../components/FrameForm'
 import { CameraIcon, FilmIcon } from '../components/Icons'
 import { save, type Frame, type Roll } from '../db'
-import { byId, lensesForCamera, rollTitle, useCameras, useFilms, useFrames, useLenses, useRoll } from '../hooks'
+import { byId, lensesForCamera, rollTitle, useCameras, useFilms, useFlashes, useFrames, useLenses, useRoll } from '../hooks'
 import { formatDate, formatDateTime, hasLocation, today } from '../lib'
 
 type Gap = { gap: true; from: number; to: number }
@@ -28,6 +28,8 @@ export function RollDetail() {
   const cameras = byId(useCameras())
   const allLenses = useLenses()
   const lensById = byId(allLenses)
+  const flashes = useFlashes()
+  const flashById = byId(flashes)
 
   if (roll === undefined || frames === undefined) return null
   if (roll === null) return <p className="empty">Roll not found.</p>
@@ -91,7 +93,7 @@ export function RollDetail() {
             <p className="hint">No lenses with mount {camera.mount} yet. Set the mount on your lenses under <Link to="/gear">Gear</Link>.</p>
           )}
           {/* key resets the form to the new draft after each save */}
-          <FrameForm key={`new-${nextNumber}`} frame={draft} lenses={lenses} camera={camera} isNew />
+          <FrameForm key={`new-${nextNumber}`} frame={draft} lenses={lenses} flashes={flashes} camera={camera} iso={roll.shot_iso || film?.iso} isNew />
           <button className="link" onClick={() => mark('finished_at')}>
             Mark roll as finished
           </button>
@@ -133,7 +135,7 @@ export function RollDetail() {
                         .join('  ·  ') || <span className="muted">—</span>}
                     </div>
                     <div className="muted small">
-                      {[f.lens && lensById.get(f.lens)?.name, formatDateTime(f.taken_at), hasLocation(f) && '📍']
+                      {[f.lens && lensById.get(f.lens)?.name, f.flash && `⚡ ${[flashById.get(f.flash)?.name ?? 'Flash', f.flash_power].filter(Boolean).join(' ')}`, formatDateTime(f.taken_at), hasLocation(f) && '📍']
                         .filter(Boolean)
                         .join(' · ')}
                     </div>

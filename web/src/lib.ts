@@ -55,6 +55,9 @@ export function describeRange(from?: string, to?: string, prefix = ''): string {
 
 export const EXPOSURE_COMP = ['-2', '-1.5', '-1', '-0.5', '+0.5', '+1', '+1.5', '+2']
 
+// Manual flash output as a fraction of full power.
+export const FLASH_POWERS = ['1/1', '1/2', '1/4', '1/8', '1/16', '1/32', '1/64', '1/128']
+
 export const FORMATS = ['35mm', '120', '4x5', '110', 'Instant']
 
 export const MOUNTS = [

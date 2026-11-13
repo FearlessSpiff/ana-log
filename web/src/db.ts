@@ -33,6 +33,12 @@ export interface Lens extends Base {
   notes?: string
 }
 
+export interface Flash extends Base {
+  name: string
+  guide_number?: number
+  notes?: string
+}
+
 export interface Film extends Base {
   name: string
   iso?: number
@@ -60,6 +66,8 @@ export interface Frame extends Base {
   aperture?: string
   shutter?: string
   lens?: string
+  flash?: string
+  flash_power?: string
   exposure_comp?: string
   taken_at?: string
   lat?: number
@@ -68,12 +76,13 @@ export interface Frame extends Base {
   skipped?: boolean
 }
 
-export const TABLES = ['cameras', 'lenses', 'films', 'rolls', 'frames'] as const
+export const TABLES = ['cameras', 'lenses', 'flashes', 'films', 'rolls', 'frames'] as const
 export type TableName = (typeof TABLES)[number]
 
 export class AnaLogDB extends Dexie {
   cameras!: EntityTable<Camera, 'id'>
   lenses!: EntityTable<Lens, 'id'>
+  flashes!: EntityTable<Flash, 'id'>
   films!: EntityTable<Film, 'id'>
   rolls!: EntityTable<Roll, 'id'>
   frames!: EntityTable<Frame, 'id'>
@@ -89,6 +98,7 @@ export class AnaLogDB extends Dexie {
       frames: 'id, _dirty, roll',
       meta: 'key',
     })
+    this.version(2).stores({ flashes: 'id, _dirty' })
   }
 }
 

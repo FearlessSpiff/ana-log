@@ -83,6 +83,17 @@ const LENS_SVG = (
   </>
 )
 
+const FLASH_SVG = (
+  <>
+    <rect x="13" y="4" width="22" height="13" rx="2" />
+    <rect className="glass" x="16" y="7" width="16" height="7" rx="1" stroke="none" />
+    <path d="M17 17l-2 6h18l-2-6" />
+    <rect x="15" y="23" width="18" height="15" rx="2" />
+    <path d="M25.5 26l-4 6h5l-4 5" />
+    <path d="M18 38v3h12v-3M16 44h16" />
+  </>
+)
+
 const FILM_SVG: Record<FilmShape, ReactNode> = {
   '35mm': (
     <>
@@ -141,6 +152,10 @@ export function CameraIcon({ type, size = 30 }: { type?: string; size?: number }
 
 export function LensIcon({ size = 30 }: { size?: number }) {
   return <Svg size={size}>{LENS_SVG}</Svg>
+}
+
+export function FlashIcon({ size = 30 }: { size?: number }) {
+  return <Svg size={size}>{FLASH_SVG}</Svg>
 }
 
 export function FilmIcon({

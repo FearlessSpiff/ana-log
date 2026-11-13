@@ -18,7 +18,7 @@ lens, aperture, shutter speed, location and notes per frame.
 | Backend  | PocketBase (collections in `pb/pb_migrations`, hooks in `pb/pb_hooks`) |
 | Deploy   | Docker Compose behind nginx with Let's Encrypt                |
 
-Data model: **cameras**, **lenses** and **films** (your gear), **rolls** (a film
+Data model: **cameras**, **lenses**, **flashes** and **films** (your gear), **rolls** (a film
 loaded in a camera) and **frames** (one exposure on a roll). Every record
 belongs to a user; PocketBase rules only let users read and write their own.
 

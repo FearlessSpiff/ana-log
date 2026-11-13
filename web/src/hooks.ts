@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { alive, getDb, type Camera, type Film, type Frame, type Lens, type Roll } from './db'
+import { alive, getDb, type Camera, type Film, type Flash, type Frame, type Lens, type Roll } from './db'
 
 export function useCameras(): Camera[] {
   return useLiveQuery(() => getDb().cameras.toArray().then(alive), [], []).sort(byName)
@@ -7,6 +7,10 @@ export function useCameras(): Camera[] {
 
 export function useLenses(): Lens[] {
   return useLiveQuery(() => getDb().lenses.toArray().then(alive), [], []).sort(byName)
+}
+
+export function useFlashes(): Flash[] {
+  return useLiveQuery(() => getDb().flashes.toArray().then(alive), [], []).sort(byName)
 }
 
 export function useFilms(): Film[] {

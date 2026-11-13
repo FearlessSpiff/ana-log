@@ -455,6 +455,66 @@ main {
   color: var(--muted);
 }
 
+.flash-table {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.flash-table legend {
+  padding: 0;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.flash-table .scroll {
+  overflow-x: auto;
+}
+
+.flash-table table {
+  border-collapse: collapse;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.flash-table th {
+  padding: 0.3rem 0.4rem;
+  font-weight: normal;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.flash-table th.on {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.flash-table td {
+  padding: 1px;
+}
+
+.flash-table td button {
+  width: 100%;
+  min-width: 2.8rem;
+  min-height: 38px;
+  padding: 0 0.3rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+}
+
+.flash-table td.cross button {
+  background: var(--surface-2);
+}
+
+.flash-table td.on button {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
 .chip-row {
   display: flex;
   flex-wrap: wrap;

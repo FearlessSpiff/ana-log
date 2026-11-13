@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { save, type Camera, type Frame, type Lens } from '../db'
+import { save, type Camera, type Flash, type Frame, type Lens } from '../db'
 import {
   EXPOSURE_COMP,
+  FLASH_POWERS,
   apertureOptions,
   fromDateTimeInput,
   gpsEnabled,
@@ -10,11 +11,14 @@ import {
   toDateTimeInput,
 } from '../lib'
 import { ChipPicker } from './ChipPicker'
+import { FlashTable } from './FlashTable'
 
 interface Props {
   frame: Partial<Frame> & { roll: string }
   lenses: Lens[]
+  flashes: Flash[]
   camera?: Camera
+  iso?: number
   isNew: boolean
   onSaved?: (frame: Frame) => void
   children?: React.ReactNode
@@ -22,12 +26,13 @@ interface Props {
 
 type GpsState = 'off' | 'locating' | 'ok' | 'failed'
 
-export function FrameForm({ frame: initial, lenses, camera, isNew, onSaved, children }: Props) {
+export function FrameForm({ frame: initial, lenses, flashes, camera, iso, isNew, onSaved, children }: Props) {
   const [frame, setFrame] = useState(initial)
   const [gps, setGps] = useState<GpsState>(hasLocation(initial) ? 'ok' : 'off')
-  const [showMore, setShowMore] = useState(!isNew || !!initial.exposure_comp)
+  const [showMore, setShowMore] = useState(!isNew || !!initial.exposure_comp || !!initial.flash_power)
 
   const lens = lenses.find((l) => l.id === frame.lens)
+  const flash = flashes.find((f) => f.id === frame.flash)
 
   const set = <K extends keyof Frame>(key: K, value: Frame[K]) => setFrame((f) => ({ ...f, [key]: value }))
 
@@ -91,6 +96,34 @@ export function FrameForm({ frame: initial, lenses, camera, isNew, onSaved, chil
         )}
       </div>
 
+      {flashes.length === 1 && !(frame.flash && frame.flash !== flashes[0].id) ? (
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={frame.flash === flashes[0].id}
+            onChange={(e) => setFrame((f) => ({ ...f, flash: e.target.checked ? flashes[0].id : '', flash_power: e.target.checked ? f.flash_power : '' }))}
+          />
+          Flash ({flashes[0].name})
+        </label>
+      ) : (
+        flashes.length > 0 && (
+          <label>
+            Flash
+            <select
+              value={frame.flash ?? ''}
+              onChange={(e) => setFrame((f) => ({ ...f, flash: e.target.value, flash_power: e.target.value ? f.flash_power : '' }))}
+            >
+              <option value="">No flash</option>
+              {flashes.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )
+      )}
+
       <ChipPicker label="Aperture" prefix="f/" options={apertureOptions(lens)} value={frame.aperture} onChange={(v) => set('aperture', v)} />
       <ChipPicker label="Shutter" options={shutterOptions(camera)} value={frame.shutter} onChange={(v) => set('shutter', v)} />
 
@@ -102,6 +135,30 @@ export function FrameForm({ frame: initial, lenses, camera, isNew, onSaved, chil
             value={frame.exposure_comp}
             onChange={(v) => set('exposure_comp', v)}
           />
+          {frame.flash && (
+            <ChipPicker
+              label="Flash power (manual)"
+              options={FLASH_POWERS}
+              value={frame.flash_power}
+              onChange={(v) => set('flash_power', v)}
+            />
+          )}
+          {flash &&
+            (flash.guide_number && iso ? (
+              <FlashTable
+                gn={flash.guide_number}
+                iso={iso}
+                apertures={apertureOptions(lens)}
+                aperture={frame.aperture}
+                power={frame.flash_power}
+                onPick={(aperture, flash_power) => setFrame((f) => ({ ...f, aperture, flash_power }))}
+              />
+            ) : (
+              <p className="hint">
+                {flash.guide_number ? 'Set the ISO on the roll or film' : `Set the guide number of ${flash.name} under Gear`} to see
+                flash distances.
+              </p>
+            ))}
           <label>
             Notes
             <textarea rows={2} value={frame.notes ?? ''} onChange={(e) => set('notes', e.target.value)} />
@@ -119,7 +176,7 @@ export function FrameForm({ frame: initial, lenses, camera, isNew, onSaved, chil
         </>
       ) : (
         <button type="button" className="link" onClick={() => setShowMore(true)}>
-          + Notes, exposure compensation
+          + Notes, exposure compensation{frame.flash ? ', flash power' : ''}
         </button>
       )}
 
