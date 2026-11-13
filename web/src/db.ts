@@ -109,9 +109,43 @@ export function openDb(userId: string): AnaLogDB {
   if (current?.name !== `ana-log-${userId}`) {
     current?.close()
     current = new AnaLogDB(`ana-log-${userId}`)
+    suspended = false
   }
   return current
 }
+
+// The database is closed while the app is in the background. Chrome freezes
+// hidden pages; a frozen page that is in the middle of reading IndexedDB blocks
+// every write from other instances of the app (e.g. the installed app and a
+// browser tab) until it is woken up again. Live queries keep showing their last
+// result while suspended (see useLive) and rerun on resume.
+let suspended = false
+let epoch = 0
+const epochListeners = new Set<() => void>()
+
+export const isSuspended = () => suspended
+export const dbEpoch = () => epoch
+
+export function onDbEpoch(listener: () => void): () => void {
+  epochListeners.add(listener)
+  return () => epochListeners.delete(listener)
+}
+
+export function suspendDb() {
+  if (!current || suspended) return
+  suspended = true
+  current.close({ disableAutoOpen: true })
+}
+
+export function resumeDb() {
+  if (!current || !suspended) return
+  suspended = false
+  current.open().catch((e) => console.error('reopening database failed', e))
+  epoch++
+  epochListeners.forEach((l) => l())
+}
+
+export const isClosedError = (e: unknown) => e instanceof Error && e.name === 'DatabaseClosedError'
 
 export function getDb(): AnaLogDB {
   if (!current) throw new Error('database not opened')
@@ -129,6 +163,7 @@ export function newId(): string {
 }
 
 export async function save<T extends Base>(name: TableName, rec: Partial<T>): Promise<string> {
+  resumeDb()
   const t = table<Base>(name)
   const id = rec.id ?? newId()
   await getDb().transaction('rw', t, async () => {

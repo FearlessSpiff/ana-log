@@ -1,8 +1,7 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FrameForm } from '../components/FrameForm'
 import { getDb, remove } from '../db'
-import { lensesForCamera, useCameras, useFilms, useFlashes, useLenses, useRoll } from '../hooks'
+import { lensesForCamera, useCameras, useFilms, useFlashes, useLenses, useLive, useRoll } from '../hooks'
 
 export function FramePage() {
   const { id, frameId } = useParams()
@@ -13,7 +12,7 @@ export function FramePage() {
   const films = useFilms()
   const roll = useRoll(id)
   // FrameForm copies this into its own state once, so syncs don't reset edits.
-  const frame = useLiveQuery(async () => (frameId ? ((await getDb().frames.get(frameId)) ?? null) : null), [frameId])
+  const frame = useLive(async () => (frameId ? ((await getDb().frames.get(frameId)) ?? null) : null), [frameId])
 
   if (frame === undefined || roll === undefined) return null
   if (frame === null || frame.deleted) return <p className="empty">Frame not found.</p>

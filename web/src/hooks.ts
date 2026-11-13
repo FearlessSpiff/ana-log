@@ -1,35 +1,59 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { alive, getDb, type Camera, type Film, type Flash, type Frame, type Lens, type Roll } from './db'
+import { useRef, useSyncExternalStore } from 'react'
+import { alive, dbEpoch, getDb, isClosedError, isSuspended, onDbEpoch, type Camera, type Film, type Flash, type Frame, type Lens, type Roll } from './db'
+
+// useLiveQuery that survives the database being suspended in the background:
+// while it is closed the last result is kept, and the query resubscribes when
+// the database is reopened.
+export function useLive<T>(query: () => Promise<T>, deps: unknown[]): T | undefined
+export function useLive<T, D>(query: () => Promise<T>, deps: unknown[], initial: D): T | D
+export function useLive<T, D>(query: () => Promise<T>, deps: unknown[], initial?: D): T | D | undefined {
+  const epoch = useSyncExternalStore(onDbEpoch, dbEpoch)
+  const last = useRef<T | D | undefined>(initial)
+  return useLiveQuery(
+    async () => {
+      if (isSuspended()) return last.current
+      try {
+        return (last.current = await query())
+      } catch (e) {
+        if (isClosedError(e)) return last.current
+        throw e
+      }
+    },
+    [...deps, epoch],
+    last.current,
+  )
+}
 
 export function useCameras(): Camera[] {
-  return useLiveQuery(() => getDb().cameras.toArray().then(alive), [], []).sort(byName)
+  return useLive(() => getDb().cameras.toArray().then(alive), [], []).sort(byName)
 }
 
 export function useLenses(): Lens[] {
-  return useLiveQuery(() => getDb().lenses.toArray().then(alive), [], []).sort(byName)
+  return useLive(() => getDb().lenses.toArray().then(alive), [], []).sort(byName)
 }
 
 export function useFlashes(): Flash[] {
-  return useLiveQuery(() => getDb().flashes.toArray().then(alive), [], []).sort(byName)
+  return useLive(() => getDb().flashes.toArray().then(alive), [], []).sort(byName)
 }
 
 export function useFilms(): Film[] {
-  return useLiveQuery(() => getDb().films.toArray().then(alive), [], []).sort(byName)
+  return useLive(() => getDb().films.toArray().then(alive), [], []).sort(byName)
 }
 
 export function useRolls(): Roll[] | undefined {
-  return useLiveQuery(() => getDb().rolls.toArray().then(alive), [])
+  return useLive(() => getDb().rolls.toArray().then(alive), [])
 }
 
 export function useRoll(id?: string): Roll | null | undefined {
-  return useLiveQuery(async () => {
+  return useLive(async () => {
     const roll = id ? await getDb().rolls.get(id) : undefined
     return roll && !roll.deleted ? roll : null
   }, [id])
 }
 
 export function useFrames(rollId?: string): Frame[] | undefined {
-  return useLiveQuery(
+  return useLive(
     async () =>
       rollId
         ? alive(await getDb().frames.where('roll').equals(rollId).toArray()).sort(
@@ -41,7 +65,7 @@ export function useFrames(rollId?: string): Frame[] | undefined {
 }
 
 export function useFrameCounts(): Map<string, number> {
-  return useLiveQuery(
+  return useLive(
     async () => {
       // Highest frame number, so skipped and unlogged frames count as used.
       const counts = new Map<string, number>()

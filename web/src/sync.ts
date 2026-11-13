@@ -1,6 +1,6 @@
 import { ClientResponseError, type RecordModel } from 'pocketbase'
 import { useSyncExternalStore } from 'react'
-import { getDb, pendingCount, table, TABLES, type Base, type TableName } from './db'
+import { getDb, isClosedError, isSuspended, pendingCount, resumeDb, suspendDb, table, TABLES, type Base, type TableName } from './db'
 import { pb } from './pb'
 
 export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'auth'
@@ -93,8 +93,17 @@ async function pull(name: TableName) {
   })
 }
 
+async function updatePending() {
+  if (isSuspended()) return
+  try {
+    setStatus({ pending: await pendingCount() })
+  } catch (e) {
+    if (!isClosedError(e)) throw e
+  }
+}
+
 async function syncOnce() {
-  if (!pb.authStore.record) return
+  if (!pb.authStore.record || isSuspended()) return
   if (!navigator.onLine) {
     setStatus({ state: 'offline' })
     return
@@ -110,7 +119,10 @@ async function syncOnce() {
         : { state: 'idle', error: undefined, lastSync: Date.now() },
     )
   } catch (e) {
-    if (e instanceof ClientResponseError && (e.status === 401 || e.status === 403)) {
+    if (isClosedError(e)) {
+      // Went to the background mid-sync; it reruns when the app is visible again.
+      setStatus({ state: 'idle' })
+    } else if (e instanceof ClientResponseError && (e.status === 401 || e.status === 403)) {
       setStatus({ state: 'auth', error: 'Session expired, sign in again to sync.' })
     } else if (e instanceof ClientResponseError && e.status === 0) {
       setStatus({ state: 'offline' })
@@ -118,7 +130,7 @@ async function syncOnce() {
       setStatus({ state: 'error', error: String(e instanceof Error ? e.message : e) })
     }
   } finally {
-    setStatus({ pending: await pendingCount() })
+    await updatePending()
   }
 }
 
@@ -146,20 +158,28 @@ let timer: ReturnType<typeof setTimeout> | undefined
 export function requestSync(delay = 800) {
   clearTimeout(timer)
   timer = setTimeout(sync, delay)
-  pendingCount().then((pending) => setStatus({ pending }))
+  updatePending()
 }
 
 // Sync on start, when connectivity returns, when the app comes back to the
-// foreground and periodically while it is open.
+// foreground and periodically while it is open. The local database is closed
+// while the app is hidden (see suspendDb).
 export function startSync(): () => void {
-  const onVisible = () => document.visibilityState === 'visible' && sync()
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') {
+      resumeDb()
+      sync()
+    } else {
+      suspendDb()
+    }
+  }
   window.addEventListener('online', sync)
-  document.addEventListener('visibilitychange', onVisible)
+  document.addEventListener('visibilitychange', onVisibility)
   const interval = setInterval(sync, 60_000)
   sync()
   return () => {
     window.removeEventListener('online', sync)
-    document.removeEventListener('visibilitychange', onVisible)
+    document.removeEventListener('visibilitychange', onVisibility)
     clearInterval(interval)
     clearTimeout(timer)
   }
