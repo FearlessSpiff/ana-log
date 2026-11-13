@@ -1,6 +1,10 @@
 import type { Camera, Lens } from './db'
 
+// Common widest and smallest apertures, suggested when entering a lens.
 export const APERTURES =['1', '1.2', '1.4', '1.8', '2', '2.8', '3.5', '4', '5.6', '8', '11', '16', '22', '32']
+
+// Full stops: each one halves the light of the previous.
+const FULL_STOPS = ['1', '1.4', '2', '2.8', '4', '5.6', '8', '11', '16', '22', '32']
 
 export const SHUTTERS = [
   'B', '30s', '15s', '8s', '4s', '2s', '1s', '1/2', '1/4', '1/8', '1/15', '1/30',
@@ -16,8 +20,8 @@ export function apertureOptions(lens?: Lens): string[] {
   const narrow = cleanAperture(lens?.min_aperture)
   const max = parseFloat(wide)
   const min = parseFloat(narrow)
-  if (!max && !min) return APERTURES
-  const options = APERTURES.filter((a) => (!max || +a >= max) && (!min || +a <= min))
+  if (!max && !min) return FULL_STOPS
+  const options = FULL_STOPS.filter((a) => (!max || +a >= max) && (!min || +a <= min))
   if (max && !options.includes(wide)) options.unshift(wide)
   if (min && !options.includes(narrow)) options.push(narrow)
   return options
